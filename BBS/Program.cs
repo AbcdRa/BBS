@@ -2,25 +2,26 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Numerics;
+
 using System.IO;
+using System.Numerics;
 
 namespace BBS
 {
     class Program
     {
-        static BigInteger[] GetIntFromFile(string filepath) {
+        static BigInteger[] GetIntFromFile(string filepath)
+        {
             var fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
             using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
             {
                 BigInteger p = BigInteger.Parse(streamReader.ReadLine());
                 BigInteger q = BigInteger.Parse(streamReader.ReadLine());
-                return new BigInteger[] {p, q };
+                return new BigInteger[] { p, q };
             }
-            throw new Exception("ФАЙЛ НЕ ПРОСЧИИАТН");
-           
+            throw new Exception("С файлом : " + filepath + " возникла проблема");
         }
+
 
         static byte[] GetSeriesFromFile(string filepath)
         {
@@ -34,32 +35,33 @@ namespace BBS
                 }
                 return series.ToArray();
             }
-            
-            throw new Exception("ФАЙЛ НЕ ПРОСЧИИАТН");
-           
+
+            throw new Exception("С файлом: " + filepath + " возникла проблема");
         }
 
-        static void showArray<T>(T[] arr)
+
+        static void ShowArray<T>(T[] arr)
         {
-            for (int i = 0; i < arr.Length; i++)
+            for (int i = 0; i < arr.Length - 1; i++)
             {
                 Console.Write(arr[i]);
                 Console.Write(", ");
             }
+            Console.Write(arr[arr.Length - 1]);
         }
 
-        static void PutIntFromFile(string filepath, byte[] seqs)
+        static void PutIntToFile(string filepath, byte[] seqs)
         {
             var fileStream = new FileStream(filepath, FileMode.OpenOrCreate, FileAccess.Write);
             using (var streamWriter = new StreamWriter(fileStream, Encoding.UTF8))
             {
-                foreach(var el in seqs ) {
+                foreach (var el in seqs)
+                {
                     streamWriter.WriteLine(el.ToString());
                 }
-
                 return;
             }
-            throw new Exception("ФАЙЛ НЕ ПРОСЧИИАТН");
+            throw new Exception("С файлом: " + filepath + " возникла проблема");
 
         }
 
@@ -75,30 +77,30 @@ namespace BBS
         }
 
 
-        static byte[] BBS(BigInteger p, BigInteger q, int N)
+        static byte[] BBS(BigInteger p, BigInteger q, int m)
         {
             if (p % 4 != 3 || q % 4 != 3)
                 throw new Exception("Выбранный простые числа не подходят");
-            BigInteger M = p * q;
+            BigInteger N = p * q;
             Random random = new Random();
-            byte[] series = new byte[N];
-            int x = random.Next(1000,int.MaxValue);
-            while (GCD(x, M) != 1)
+            byte[] series = new byte[m];
+            int s = random.Next(1, (int)N - 1);
+            while (GCD(s, N) != 1)
             {
-                x = random.Next(int.MaxValue);
+                s = random.Next(1, (int)N - 1);
             }
-            BigInteger x1 = BigInteger.ModPow(x, 2, M);
-            for (int i = 0; i < N; i++)
+            BigInteger u = BigInteger.ModPow(s, 2, N);
+            for (int i = 0; i < m; i++)
             {
-                series[i] = (byte) (x1 % 2);
-                x1 = BigInteger.ModPow(x1, 2, M);
+                series[i] = (byte)(u % 2);
+                u = BigInteger.ModPow(u, 2, N);
             }
             return series;
         }
 
 
 
-        static bool freq_test(string filename, bool show = true)
+        static bool TestOnFrequance(string filename, bool show = true)
         {
             byte[] series = GetSeriesFromFile(filename);
             int sum = 0;
@@ -109,11 +111,12 @@ namespace BBS
             double s = Math.Abs(sum) / Math.Sqrt(series.Length);
             if (show)
             {
-                
+
                 Console.Write("\ns = ");
                 Console.Write(s);
                 Console.WriteLine();
-                if(s <= 1.82138636) {
+                if (s <= 1.82138636)
+                {
                     Console.WriteLine("Последовательность прошла проверку частотности");
                 }
                 else Console.WriteLine("Последовательность не прошла проверку частотности");
@@ -122,25 +125,25 @@ namespace BBS
             return s <= 1.82138636;
         }
 
-        static bool subseries_test(string filename, bool show = true)
+        static bool TestOnSubseq(string filename, bool show = true)
         {
             byte[] series = GetSeriesFromFile(filename);
             int piSum = 0;
             for (int i = 0; i < series.Length; i++)
             {
-                piSum += series[i] ;
+                piSum += series[i];
             }
-            double piS = (piSum+0.0) / series.Length;
+            double piS = (piSum + 0.0) / series.Length;
             int Vn = 1;
-            for (int i = 1; i < series.Length-1; i++)
+            for (int i = 1; i < series.Length - 1; i++)
             {
-                Vn += series[i]==series[i+1] ? 1: 0;
+                Vn += series[i] == series[i + 1] ? 1 : 0;
             }
-            double s = Math.Abs(Vn - 2 * piS * series.Length * (1 - piS)) / 
+            double s = Math.Abs(Vn - 2 * piS * series.Length * (1 - piS)) /
                 (2 * Math.Sqrt(2 * series.Length) * piS * (1 - piS));
             if (show)
             {
-                
+
                 Console.Write("\ns = ");
                 Console.Write(s);
                 Console.WriteLine();
@@ -155,9 +158,9 @@ namespace BBS
         }
 
 
-        static bool dispersion_test(string filename, bool show = true)
+        static bool TestOnDispersion(string filename, bool show = true)
         {
-            
+
             byte[] series = GetSeriesFromFile(filename);
             int[] Ss = new int[series.Length + 2];
             Ss[0] = 0;
@@ -169,21 +172,21 @@ namespace BBS
                 }
             }
             int k = 0;
-            for(int i=0; i < Ss.Length; i++)
+            for (int i = 0; i < Ss.Length; i++)
             {
                 if (Ss[i] == 0) k++;
             }
             int L = k - 1;
             int[] ksij = new int[19];
-            double[] Ys = new double[19]; 
-            for(int j =-9; j <= 9; j++)
+            double[] Ys = new double[19];
+            for (int j = -9; j <= 9; j++)
             {
                 if (j == 0) continue;
                 for (int i = 0; i < Ss.Length; i++)
                 {
-                    if (Ss[i] == j) ksij[j+9]++;
+                    if (Ss[i] == j) ksij[j + 9]++;
                 }
-                Ys[j + 9] = Math.Abs(ksij[j + 9] - L) / 
+                Ys[j + 9] = Math.Abs(ksij[j + 9] - L) /
                     Math.Sqrt(2 * L * (4 * Math.Abs(j) - 2));
             }
             bool result = true;
@@ -194,37 +197,37 @@ namespace BBS
             if (show)
             {
                 Console.Write("\nS' = ");
-                showArray(Ss);
+                ShowArray(Ss);
                 Console.Write("\nL = ");
                 Console.Write(L);
                 Console.Write("\nksij = ");
-                showArray(ksij);
+                ShowArray(ksij);
                 Console.Write("\nYj = ");
-                showArray(Ys);
+                ShowArray(Ys);
                 Console.WriteLine();
-                
-                if (result)
-                {
-                    Console.WriteLine("Последовательность прошла проверку на  произвольные отклонения");
-                }
-                else Console.WriteLine("Последовательность не прошла проверку на  произвольные отклонения");
-
             }
+            if (result)
+            {
+                Console.WriteLine("Последовательность прошла проверку на  произвольные отклонения");
+            }
+            else Console.WriteLine("Последовательность не прошла проверку на  произвольные отклонения");
             return result;
         }
 
-        static void Main(string[] args)
+        static void Main()
         {
-            string fileOut = @"I:\BBS\BBS\OUT.txt";
-            BigInteger[] pq = GetIntFromFile(@"I:\BBS\BBS\IN.txt");
+            string filepathDir = @"D:\Projects\CSharp\BBSU\BBSU\";
+            string filepathOut = filepathDir + @"OUT.txt";
+            string filepathIn = filepathDir + @"IN.txt";
+            BigInteger[] pq = GetIntFromFile(filepathIn);
             byte[] series = BBS(pq[0], pq[1], 200);
-            //PutIntFromFile(fileOut, series);
-            
-            byte[] test = GetSeriesFromFile(fileOut);
-            showArray(test);
-            freq_test(fileOut);
-            subseries_test(fileOut);
-            dispersion_test(fileOut);
+            //PutIntToFile(filepathOut, series);
+
+            byte[] test = GetSeriesFromFile(filepathOut);
+            ShowArray(test);
+            TestOnFrequance(filepathOut);
+            TestOnSubseq(filepathOut);
+            TestOnDispersion(filepathOut);
             Console.ReadKey();
             Console.ReadLine();
         }
